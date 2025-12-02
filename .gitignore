@@ -24,3 +24,6 @@ Makefile
 # Other temporary
 *.bak
 *.tmp
+
+# 3D objects
+*.stl
