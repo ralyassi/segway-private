@@ -1,0 +1,26 @@
+# --- ROS2 workspace ---
+build/
+install/
+log/
+
+# Python cache
+**/__pycache__/
+*.pyc
+
+# Colcon stuff
+.colcon*
+*.swp
+
+# VSCode / IDE files
+.vscode/
+.idea/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Other temporary
+*.bak
+*.tmp

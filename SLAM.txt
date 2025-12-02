@@ -1,0 +1,82 @@
+SLAM-Toolbox
+
+Install:
+sudo apt install ros-humble-slam-toolbox
+
+
+Config files:
+src/segway_slam_toolbox/config
+
+
+Lanuch (Standard):
+ros2 launch slam_toolbox online_sync_launch.py
+ros2 launch slam_toolbox online_async_launch.py
+ros2 launch slam_toolbox offline_launch.py bag_filename:=/path/to/rosbag2
+
+
+Launch:
+ros2 launch segway_slam_toolbox slam_launch.py
+ros2 launch segway_slam_toolbox localization_launch.py
+
+
+
+
+Save map:
+ros2 run nav2_map_server map_saver_cli -f ~/ros2_ws/src/my_robot_slam/maps/my_map
+# Or on rviz -> add plugin -> save map + serial (for continouing slam)
+
+
+
+
+
+
+
+
+
+
+=================================================================================
+KISS-SLAM:
+
+Install KISS-icp:
+- in src folder: git clone https://github.com/PRBonn/kiss-icp.git
+- colcon build --packages-select kiss_icp  # might need to update cmake, use kitware APT
+
+
+Install KISS-SLAM:
+- pip install kiss-slam
+- in ros2_ws/config: kiss_slam_dump_config  # this creates default cfg
+
+
+================================================================================
+Cartographer
+
+Install:
+#(1)
+git clone -b ros2 https://github.com/ros2/cartographer.git --recursive # Cartographer core
+git clone -b ros2 https://github.com/ros2/cartographer_ros.git # ROS 2 bridge
+git clone -b humble https://github.com/ros-perception/pointcloud_to_laserscan.git
+
+#(2)
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+
+
+#(3)
+colcon build --packages select cartographer cartographer_ros cartographer_ros_msgs cartographer_rviz  # rviz didn't work
+colcon build --packages-select cartographer --parallel-workers 4 --cmake-args=-DCMAKE_POLICY_VERSION_MINIMUM=3.5
+
+
+#(4)
+config file: src/cartographer_ros/cartographer_ros/configuration_files/segway_2d_wheel.lua
+
+Save map:
+# SAVE map & graph
+ros2 service call /write_state cartographer_ros_msgs/srv/WriteState \
+  "{filename: '/home/segway/my_map.pbstream', include_unfinished_submaps: true}"
+# Allows SLAM to work again
+ros2 launch cartographer_ros wheeled_2d.launch.py \
+  cartographer_node_args:=" -load_state_filename /home/segway/my_map.pbstream -load_frozen_state"
+
+# AND
+ros2 run nav2_map_server map_saver_cli -f ~/map  # for 2d planning
+

@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.5.1-0-g916b5db  Build Version: 1.5.7152.31018
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="segwayrmp_description">
+  <link name="base_link"/>
+  <link
+    name="Chassis_body">
+    <inertial>
+      <origin
+        xyz="-0.033482 0.22487 0.0057368"
+        rpy="0 0 1.57" />
+      <mass
+        value="1.5192" />
+      <inertia
+        ixx="0.048829"
+        ixy="1.5025E-05"
+        ixz="1.729E-06"
+        iyy="0.0069994"
+        iyz="-0.002399"
+        izz="0.052057" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Chassis_body.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Chassis_body.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="base_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 -1.57" />
+    <parent link="base_link"/>
+    <child link="Chassis_body"/>
+  </joint>
+
+  <link
+    name="Left_rear_wheel">
+    <inertial>
+      <origin
+        xyz="-7.8407E-07 -2.4326E-05 0.002005"
+        rpy="0 0 0" />
+      <mass
+        value="1.3121" />
+      <inertia
+        ixx="0.004883"
+        ixy="-2.8757E-07"
+        ixz="-1.4658E-07"
+        iyy="0.0048836"
+        iyz="-5.3568E-08"
+        izz="0.0087354" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_rear_wheel"
+    type="continuous">
+    <origin
+      xyz="-0.30884 0.04815 -0.080406"
+      rpy="1.5708 0 1.5708" />
+    <parent
+      link="Chassis_body" />
+    <child
+      link="Left_rear_wheel" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="Right_rear_wheel">
+    <inertial>
+      <origin
+        xyz="4.9952E-06 2.3117E-05 0.0019578"
+        rpy="0 0 0" />
+      <mass
+        value="1.313" />
+      <inertia
+        ixx="0.0048865"
+        ixy="3.201E-07"
+        ixz="1.7545E-07"
+        iyy="0.0048869"
+        iyz="-2.3207E-07"
+        izz="0.0087402" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_rear_wheel"
+    type="continuous">
+    <origin
+      xyz="0.24188 0.04815 -0.080406"
+      rpy="1.5708 0 -1.5708" />
+    <parent
+      link="Chassis_body" />
+    <child
+      link="Right_rear_wheel" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="Chassis_front_beam">
+    <inertial>
+      <origin
+        xyz="-8.6161E-10 3.9501E-05 0.0062593"
+        rpy="0 0 0" />
+      <mass
+        value="0.48416" />
+      <inertia
+        ixx="0.00050823"
+        ixy="-1.2209E-08"
+        ixz="4.3336E-11"
+        iyy="0.0023652"
+        iyz="2.6588E-07"
+        izz="0.0023821" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Chassis_front_beam.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Chassis_front_beam.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Chassis_front_beam"
+    type="revolute">
+    <origin
+      xyz="-0.0335 0.504 -0.0515"
+      rpy="0 0 0" />
+    <parent
+      link="Chassis_body" />
+    <child
+      link="Chassis_front_beam" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="-3.14"
+      upper="3.14"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="Left_front_wheel">
+    <inertial>
+      <origin
+        xyz="-7.0112E-05 8.4133E-05 0.54476"
+        rpy="0 0 0" />
+      <mass
+        value="1.2504" />
+      <inertia
+        ixx="0.0046772"
+        ixy="1.3239E-07"
+        ixz="2.8374E-07"
+        iyy="0.0046777"
+        iyz="1.339E-07"
+        izz="0.0086591" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Left_front_wheel"
+    type="continuous">
+    <origin
+      xyz="0.27184 0.0001 -0.028906"
+      rpy="1.5708 0 -1.5708" />
+    <parent
+      link="Chassis_front_beam" />
+    <child
+      link="Left_front_wheel" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="Right_front_wheel">
+    <inertial>
+      <origin
+        xyz="-7.0038E-05 8.4129E-05 0.54476"
+        rpy="0 0 0" />
+      <mass
+        value="1.2504" />
+      <inertia
+        ixx="0.0046772"
+        ixy="1.3959E-07"
+        ixz="2.8223E-07"
+        iyy="0.0046777"
+        iyz="1.3406E-07"
+        izz="0.0086591" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://segwayrmp_description/meshes/Wheel.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Right_front_wheel"
+    type="continuous">
+    <origin
+      xyz="-0.27184 0.0001 -0.028906"
+      rpy="1.5708 0 1.5708" />
+    <parent
+      link="Chassis_front_beam" />
+    <child
+      link="Right_front_wheel" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <!-- 3D LIDAR ON TOP OF ROBOT -->
+  <link name="lidar_link">
+  <visual>
+    <origin xyz="0 0 0" rpy="1.5708 0 3.1416"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/mid360.stl" scale="0.001 0.001 0.001" />
+    </geometry>
+    <material name="gray">
+      <color rgba="0.7 0.7 0.7 1"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="1.5708 0 3.1416"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/mid360.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="Chassis_body"/>
+    <child link="lidar_link"/>
+    <origin xyz="-0.0335 0.276075 0.254" rpy="0 0 1.5708"/> <!-- (X is correct) Y (dist from back till lidar front axis - rear_wheel /2 = (0.504-0.04815)/2 + 0.04815=)  Z: was 0.22-->  
+  </joint>
+  
+  
+  <!-- ZED CAMERA ON TOP OF ROBOT -->
+  <link name="zed_camera_link">
+  <visual>
+    <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/ZEDX.stl" scale="0.001 0.001 0.001" />
+    </geometry>
+    <material name="gray">
+      <color rgba="0.7 0.7 0.7 1"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/ZEDX.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="Chassis_body"/>
+    <child link="zed_camera_link"/>
+    <origin xyz="-0.0335 0.500 0.15" rpy="0 -0.297 1.5708"/>  <!-- (X is correct) Y   Z.  Angle: 17 deg == 0.297  -->
+  </joint>
+  
+  
+  
+    <!-- Segway TOP Plate -->
+  <link name="top_plate">
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/segway_top_plate.stl" scale="0.001 0.001 0.001" />
+    </geometry>
+    <material name="gray">
+      <color rgba="0.7 0.7 0.7 1"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/segway_top_plate.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+  </link>
+  <joint name="top_plate_joint" type="fixed">
+    <parent link="Chassis_body"/>
+    <child link="top_plate"/>
+    <origin xyz="-0.0335 0.284 0.085" rpy="0 0 1.5708"/>  <!-- ????  -->
+  </joint>
+  
+  
+  
+    <!-- Jeson + Lidar Mount -->
+  <link name="jetson_mount">
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/Jetson_top_only_w_extended_leg.stl" scale="0.001 0.001 0.001" />
+    </geometry>
+    <material name="gray">
+      <color rgba="0.7 0.7 0.7 1"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/Jetson_top_only_w_extended_leg.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+  </link>
+  <joint name="jetson_mount_joint" type="fixed">
+    <parent link="Chassis_body"/>
+    <child link="jetson_mount"/>
+    <origin xyz="-0.0335 0.276075 0.099" rpy="0 0 0"/>  <!-- ????  -->
+  </joint>
+  
+    <!-- Jetson -->
+  <link name="jetson">
+  <visual>
+    <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/jetson.stl" scale="0.001 0.001 0.001" />
+    </geometry>
+    <material name="gray">
+      <color rgba="0.7 0.7 0.7 1"/>
+    </material>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="1.5708 0 1.5708"/>
+    <geometry>
+        <mesh filename="package://segwayrmp_description/meshes/jetson.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+  </link>
+  <joint name="jetson_joint" type="fixed">
+    <parent link="Chassis_body"/>
+    <child link="jetson"/>
+    <origin xyz="-0.082 0.235 0.125" rpy="0 -1.5708 -1.5708"/>  <!-- ????  -->
+  </joint>
+</robot>
+

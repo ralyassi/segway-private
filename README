@@ -1,0 +1,104 @@
+Code:
+- We use py10 venv, to activate: source ~/ros2_ws/py10/bin/activate
+- pytorch file: https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
+
+
+================================
+To initlize robot:
+
+	
+
+Onstart**:
+ **- ros2 launch segwayrmp segway_bringup.launch.py  # supports options like: localization:=true lidar:=true zed:=true
+   - Runs Smartcar, state/joint publisher, lidar, zed, localization
+   - To enable robot control: segway_enable_ctrl
+
+
+========================================================================
+
+Serial connection:
+	ls -l /dev/ttyUSB*  # check if ttyUSB0 or ttyUSB1  # Make sure it's ttyUSB0, since it's hardcoded in Smartcar
+	sudo chmod 777 /dev/ttyUSB0
+	sudo stty -F /dev/ttyUSB0 921600  # added as Udev rule in /etc/udev/rules.d/99-usb-serial-baud.rules
+	ros2 run segwayrmp Smartcar
+
+
+cmd_vel:
+- SmartCar listens to cmd_vel_segway <- cmd_vel_tools throttle_node <- cmd_vel
+- this keeps robot enbled, throttle_node is run by SmartCar launch file
+
+
+Control:
+- Keyboard: ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args --remap cmd_vel:=unthrottled_cmd_vel
+- Repeat cmd_vel: ros2 run cmd_vel_tools throttle_node 
+- Note: before enabling control, cmd_vel must be published at 10hz or higher
+- Enable control**: ros2 service call /ros_set_chassis_enable_cmd_srv segway_msgs/srv/RosSetChassisEnableCmd "{ros_set_chassis_enable_cmd: true}" 
+  OR use alias: segway_enable_ctrl
+- get max vel: ros2 service call /ros_get_vel_max_feedback_cmd_srv segway_msgs/srv/RosGetVelMaxFeedbackCmd "{ros_get_vel_max_fb_cmd: true}"
+
+
+LIDAR:
+- use IP: 10.42.0.5 for PC
+- Needs state publisher to show up
+
+
+Sensors:
+- ros2 launch livox_ros_driver2 MID360_launch.py 
+- ros2 launch zed_wrapper zed_camera.launch.py camera_model:=zedx
+- ros2 launch pointcloud_to_laserscan livox_pointcloud_to_laserscan_launch.py  # 3D to 2D Lidar  # called by MID360_launch
+
+
+
+Robot State:
+- ros2 lanuch segwayrmp_description state_publisher_w_joint.launch.py
+
+
+SLAM:
+- ros2 launch segway_slam_toolbox slam_async_launch.py
+- ros2 launch segway_slam_toolbox localization_launch.py
+
+
+
+Steering:
+- max angle: [-20,20]
+
+
+Frames:
+- ros2 run tf2_tools view_frames
+- ros2 run tf2_ros tf2_echo odom base_link
+
+
+########################
+Map Server:
+- ros2 run nav2_map_server map_server --ros-args -p yaml_filename:=/home/segway/ros2_ws/src/segway_slam_toolbox/maps/GLC_G.yaml -p use_sim_time:=false
+- ros2 run nav2_util lifecycle_bringup map_server
+
+AMCL:
+- ros2 run nav2_amcl amcl
+- ros2 run nav2_util lifecycle_bringup amcl
+- ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 base_link base_footprint
+
+
+########################
+Connect to ROS robot:
+
+On both machines:
+export ROS_DOMAIN_ID=191  # any domain id
+export ROS_DISCOVERY_SERVER=10.5.58.117:11811   # Robot IP
+On robot only:
+fastdds discovery --server-id 0  # 0 means port 11811
+# or service
+systemctl status fastdds-discovery  # HAS ISSUES
+
+openvpn: 10.8.0.1 <--> 10.8.0.4
+
+#########################
+Debugging:
+- Check mismatch of timestamp between topics
+
+##########################
+
+
+	
+TODO: 
+

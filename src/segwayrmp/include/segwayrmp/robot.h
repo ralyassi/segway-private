@@ -1,0 +1,191 @@
+#ifndef _ROBOT_H
+#define _ROBOT_H
+
+#include <memory>
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include "comm_ctrl_navigation.h"
+#include "Ge_encoder_odometry.h"
+#include <tf2/LinearMath/Quaternion.h>
+#include "rclcpp_action/rclcpp_action.hpp"
+
+
+#include "segway_msgs/msg/chassis_ctrl_src_fb.hpp"
+#include "segway_msgs/msg/chassis_mileage_meter_fb.hpp"
+#include "segway_msgs/msg/chassis_mode_fb.hpp"
+#include "segway_msgs/msg/error_code_fb.hpp"
+#include "segway_msgs/msg/front_axle_angle_fb.hpp"
+#include "segway_msgs/msg/motor_work_mode_fb.hpp"
+#include "segway_msgs/msg/speed_fb.hpp"
+#include "segway_msgs/msg/ticks_fb.hpp"
+#include "segway_msgs/msg/bms_fb.hpp"
+
+#include "segway_msgs/srv/ros_get_sw_version_cmd.hpp"
+#include "segway_msgs/srv/ros_get_vel_max_feedback_cmd.hpp"
+#include "segway_msgs/srv/ros_set_chassis_buzzer_cmd.hpp"
+#include "segway_msgs/srv/ros_set_chassis_enable_cmd.hpp"
+#include "segway_msgs/srv/ros_set_chassis_poweroff_cmd.hpp"
+#include "segway_msgs/srv/ros_set_load_param_cmd.hpp"
+#include "segway_msgs/srv/ros_set_vel_max_cmd.hpp"
+#include "segway_msgs/srv/chassis_send_event.hpp"
+#include "segway_msgs/srv/ros_clear_chassis_error_code_cmd.hpp"
+#include "segway_msgs/srv/ros_enable_chassis_rotate_cmd.hpp"
+#include "segway_msgs/srv/ros_get_chassis_rotate_switch_cmd.hpp"
+#include "segway_msgs/srv/ros_get_chassis_sn_cmd.hpp"
+#include "segway_msgs/srv/ros_get_load_param_cmd.hpp"
+#include "segway_msgs/srv/ros_get_rotate_function_cfg_cmd.hpp"
+#include "segway_msgs/srv/ros_set_cfg_rotate_function_cmd.hpp"
+#include "segway_msgs/srv/ros_get_host_and_chassis_match_cmd.hpp"
+#include "segway_msgs/srv/ros_reset_host_power_cmd.hpp"
+#include "segway_msgs/srv/ros_start_chassis_left_rotate_cmd.hpp"
+#include "segway_msgs/srv/ros_start_chassis_right_rotate_cmd.hpp"
+#include "segway_msgs/srv/ros_stop_chassis_rotate_cmd.hpp"
+
+#include "segway_msgs/action/ros_set_iap_cmd.hpp"
+
+#define IAP_STATE_COMPLETE  3
+#define IAP_STATE_FAIL      4
+#define IAP_STATE_ABORT     5
+
+namespace robot
+{
+    class Chassis
+    {
+    public:
+        Chassis(const std::shared_ptr<rclcpp::Node> & node);
+        static void chassis_send_event_callback(int event_no);
+        rclcpp::Logger get_logger() const;
+
+    private:
+        void cmd_vel_callback(const geometry_msgs::msg::Twist::SharedPtr vel);
+        void TimeUpdate1000Hz();
+        void TimeUpdate1Hz();
+        void PubOdomToRosOdom(Odometry odom_data);
+        void PubImuToRosImu();
+
+        std::shared_ptr<rclcpp::Node> node_;
+
+        rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr velocity_sub_;
+
+        rclcpp::Publisher<segway_msgs::msg::BmsFb>::SharedPtr bms_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::ChassisCtrlSrcFb>::SharedPtr chassis_ctrl_src_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::ChassisMileageMeterFb>::SharedPtr chassis_mileage_meter_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::ChassisModeFb>::SharedPtr chassis_mode_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::ErrorCodeFb>::SharedPtr error_code_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::FrontAxleAngleFb>::SharedPtr front_axle_angle_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::MotorWorkModeFb>::SharedPtr motor_work_mode_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::SpeedFb>::SharedPtr speed_fb_pub;
+        rclcpp::Publisher<segway_msgs::msg::TicksFb>::SharedPtr ticks_fb_pub;
+        rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr Odom_pub;
+        rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr Imu_pub;
+        std::shared_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster;
+
+        rclcpp::TimerBase::SharedPtr update_timer_;
+        rclcpp::TimerBase::SharedPtr update_timer2_;
+
+        segway_msgs::msg::BmsFb bms_fb;
+        segway_msgs::msg::ChassisCtrlSrcFb chassis_ctrl_src_fb;
+        segway_msgs::msg::ChassisMileageMeterFb chassis_mileage_meter_fb;
+        segway_msgs::msg::ChassisModeFb chassis_mode_fb;
+        segway_msgs::msg::ErrorCodeFb error_code_fb;
+        segway_msgs::msg::FrontAxleAngleFb front_axle_angle_fb;
+        segway_msgs::msg::MotorWorkModeFb motor_work_mode_fb;
+        segway_msgs::msg::SpeedFb speed_fb;
+        segway_msgs::msg::TicksFb ticks_fb;
+        nav_msgs::msg::Odometry ROS_odom;
+        sensor_msgs::msg::Imu ros_imu;
+        geometry_msgs::msg::TransformStamped odom_trans;
+
+        void ros_enable_chassis_rotate_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosEnableChassisRotateCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosEnableChassisRotateCmd::Response> res);
+        void ros_get_chassis_rotate_switch_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetChassisRotateSwitchCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetChassisRotateSwitchCmd::Response> res);
+        bool ros_clear_chassis_error_code_cmd_callback(
+    	const std::shared_ptr<segway_msgs::srv::RosClearChassisErrorCodeCmd::Request> req,
+    	std::shared_ptr<segway_msgs::srv::RosClearChassisErrorCodeCmd::Response> res);
+        void ros_get_load_param_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetLoadParamCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetLoadParamCmd::Response> res);
+        void ros_get_chassis_sn_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetChassisSnCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetChassisSnCmd::Response> res);
+        void ros_get_sw_version_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetSwVersionCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetSwVersionCmd::Response> res);
+        void ros_get_vel_max_feedback_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetVelMaxFeedbackCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetVelMaxFeedbackCmd::Response> res);
+        void ros_set_chassis_buzzer_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosSetChassisBuzzerCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosSetChassisBuzzerCmd::Response> res);
+        void ros_set_chassis_enable_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosSetChassisEnableCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosSetChassisEnableCmd::Response> res);
+        void ros_set_chassis_poweroff_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosSetChassisPoweroffCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosSetChassisPoweroffCmd::Response> res);
+        void ros_set_load_param_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosSetLoadParamCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosSetLoadParamCmd::Response> res);
+        void ros_set_vel_max_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosSetVelMaxCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosSetVelMaxCmd::Response> res);
+        void ros_reset_host_power_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosResetHostPowerCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosResetHostPowerCmd::Response> res);
+        void ros_start_chassis_left_rotate_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosStartChassisLeftRotateCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosStartChassisLeftRotateCmd::Response> res);
+        void ros_start_chassis_right_rotate_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosStartChassisRightRotateCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosStartChassisRightRotateCmd::Response> res);
+        void ros_stop_chassis_rotate_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosStopChassisRotateCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosStopChassisRotateCmd::Response> res);
+        void ros_get_rotate_function_cfg_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetRotateFunctionCfgCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetRotateFunctionCfgCmd::Response> res);
+        void ros_set_cfg_rotate_function_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosSetCfgRotateFunctionCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosSetCfgRotateFunctionCmd::Response> res);
+        void ros_get_host_and_chassis_match_cmd_callback(
+            const std::shared_ptr<segway_msgs::srv::RosGetHostAndChassisMatchCmd::Request> req,
+            std::shared_ptr<segway_msgs::srv::RosGetHostAndChassisMatchCmd::Response> res);
+
+        //rclcpp::Client<segway_msgs::srv::ChassisSendEvent>::SharedPtr chassis_send_event_srv_client;
+
+        rclcpp::Service<segway_msgs::srv::RosEnableChassisRotateCmd>::SharedPtr ros_enable_chassis_rotate_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetChassisRotateSwitchCmd>::SharedPtr ros_get_chassis_rotate_switch_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosClearChassisErrorCodeCmd>::SharedPtr ros_clear_chassis_error_code_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetChassisSnCmd>::SharedPtr ros_get_chassis_sn_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetLoadParamCmd>::SharedPtr ros_get_load_param_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetSwVersionCmd>::SharedPtr ros_get_sw_version_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetVelMaxFeedbackCmd>::SharedPtr ros_get_vel_max_feedback_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosSetChassisBuzzerCmd>::SharedPtr ros_set_chassis_buzzer_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosSetChassisEnableCmd>::SharedPtr ros_set_chassis_enable_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosSetChassisPoweroffCmd>::SharedPtr ros_set_chassis_poweroff_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosSetLoadParamCmd>::SharedPtr ros_set_load_param_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosSetVelMaxCmd>::SharedPtr ros_set_vel_max_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosResetHostPowerCmd>::SharedPtr ros_reset_host_power_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosStartChassisLeftRotateCmd>::SharedPtr ros_start_chassis_left_rotate_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosStartChassisRightRotateCmd>::SharedPtr ros_start_chassis_right_rotate_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosStopChassisRotateCmd>::SharedPtr ros_stop_chassis_rotate_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetRotateFunctionCfgCmd>::SharedPtr ros_get_rotate_function_cfg_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosSetCfgRotateFunctionCmd>::SharedPtr ros_set_cfg_rotate_function_cmd_srv_server;
+        rclcpp::Service<segway_msgs::srv::RosGetHostAndChassisMatchCmd>::SharedPtr ros_get_host_and_chassis_match_cmd_srv_server;
+
+        s_aprctrl_datastamped_t timestamp_data;
+        s_aprctrl_event_t event_data;
+
+        Ge_encoder_odometry m_ge_encoder;
+    };
+
+}
+
+#endif

@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>segwayrmp</name>
+  <version>0.0.1</version>
+  <description>The segwayrmp package</description>
+
+  <maintainer email="todo@todo.todo">wangjin</maintainer>
+  <license>TODO</license>
+
+  <!-- For ROS2, use ament as buildtool -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Standard message and rclcpp dependencies -->
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>segway_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+
+  <!-- For actions (if used) -->
+  <depend>action_msgs</depend>
+  <depend>rclcpp_action</depend>
+
+  <!-- For message and action generation (if you generate custom messages) -->
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
+  <!-- Export section for ament -->
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,36 @@
+# Planner configuration file
+
+# Device selection: "cpu" or "cuda"
+device: "cuda"
+
+use_dummy_pid: True # uses pid instead of RL (no obstacle avoidance)
+
+# Goal and waypoint distance thresholds (meters)
+goal_threshold: 0.2
+waypoint_threshold: 0.5
+
+# RL preference vector: [speed, safety, social-distance, smoothness]
+preference_vector: [1.0, 0.0, 0.0, 0.0]
+
+# Whether to use deterministic actions (True = mean policy, False = sample from distribution)
+action_deterministic: True
+
+# Velocity limits
+max_velocity: 0.5           # m/s
+max_angular_velocity: 1.0   # rad/s
+
+# RL model checkpoint path
+checkpoint_path: "checkpoint/last_SocialNavHumanPoseMORL_ep_450_rew_446.22223.pth"
+
+# velocity smoother
+use_smoothing: true
+smoothing_alpha: 0.3       # (0=no smoothing, 1=no filter)
+max_accel: 0.4             # m/s²
+max_angular_accel: 1.0     # rad/s²
+max_jerk: 1.5              # m/s³
+max_angular_jerk: 3.0      # rad/s³
+
+
+
+# waypoint reduce
+simplify_path_rdp_epsilon: 3.0  # m

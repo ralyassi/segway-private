@@ -1,0 +1,16 @@
+digraph G {
+"odom" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 40.211\nBuffer length: 4.75\nMost recent transform: 1756039691.751\nOldest transform: 1756039687.001\n"];
+"map" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 1756039576.516979\nOldest transform: 1756039576.516979\n"];
+"Chassis_body" -> "Chassis_front_beam"[label=" Broadcaster: default_authority\nAverage rate: 10.476\nBuffer length: 2.1\nMost recent transform: 1756039723.536695\nOldest transform: 1756039721.436731\n"];
+"base_link" -> "Chassis_body"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"Chassis_front_beam" -> "Left_front_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.476\nBuffer length: 2.1\nMost recent transform: 1756039723.536695\nOldest transform: 1756039721.436731\n"];
+"Chassis_body" -> "Left_rear_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.476\nBuffer length: 2.1\nMost recent transform: 1756039723.536695\nOldest transform: 1756039721.436731\n"];
+"Chassis_front_beam" -> "Right_front_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.476\nBuffer length: 2.1\nMost recent transform: 1756039723.536695\nOldest transform: 1756039721.436731\n"];
+"Chassis_body" -> "Right_rear_wheel"[label=" Broadcaster: default_authority\nAverage rate: 10.476\nBuffer length: 2.1\nMost recent transform: 1756039723.536695\nOldest transform: 1756039721.436731\n"];
+"Chassis_body" -> "camera_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "lidar_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1756039723.582607"[ shape=plaintext ] ;
+}->"map";
+}
