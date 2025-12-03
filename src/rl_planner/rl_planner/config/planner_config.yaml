@@ -6,8 +6,8 @@ device: "cuda"
 use_dummy_pid: True # uses pid instead of RL (no obstacle avoidance)
 
 # Goal and waypoint distance thresholds (meters)
-goal_threshold: 0.2
-waypoint_threshold: 0.5
+goal_threshold: 0.1
+waypoint_threshold: 0.4
 
 # RL preference vector: [speed, safety, social-distance, smoothness]
 preference_vector: [1.0, 0.0, 0.0, 0.0]

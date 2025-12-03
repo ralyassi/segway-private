@@ -26,7 +26,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: LaserScan
 Visualization Manager:
   Class: ""
   Displays:
@@ -343,6 +343,7 @@ Visualization Manager:
         InteractiveMarkers: true
         LaserScan: true
         Map: true
+        Marker: true
         MarkerArray: true
         Odometry: true
         Path: true
@@ -362,6 +363,19 @@ Visualization Manager:
       Show Axes: false
       Show Descriptions: true
       Show Visual Aids: false
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Marker
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /simplified_plan
       Value: true
   Enabled: true
   Global Options:
@@ -409,16 +423,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 9.513973236083984
+      Distance: 11.395244598388672
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -5.860353469848633
-        Y: 2.4661266803741455
-        Z: 0.1765252649784088
+        X: -5.274292469024658
+        Y: 0.4964463710784912
+        Z: 0.17797823250293732
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

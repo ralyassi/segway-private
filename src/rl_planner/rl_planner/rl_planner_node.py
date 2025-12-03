@@ -18,8 +18,9 @@ Configuration parameters (e.g., model checkpoint, preferences, limits)
 are loaded from a YAML file under `config/planner_config.yaml`.
 TODO:
 1. robot pose in not center of the robot
-2. pass action to smooth velocity controller
-3. run global planner
+2. Vel repreat function changes steering dir when reversing, check if needed
+3. check heading_diff direction matches sim (Done)
+
 """
 import os
 
@@ -42,7 +43,16 @@ from nav2_msgs.action import ComputePathToPose
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 #from tf_transformations import euler_from_quaternion
+#from tf2_ros.buffer import Buffer
+#from tf2_ros.transform_listener import TransformListener
+import tf2_geometry_msgs  # needed
+from rclpy.duration import Duration
 
+
+from tf2_ros import Buffer, TransformListener
+import tf2_ros
+from geometry_msgs.msg import TransformStamped
+#from tf_transformations import euler_from_quaternion
 
 
 from rl_planner.rlgames_runner.rlgames_eval_policy import RLModel 
@@ -71,6 +81,7 @@ class PlannerNode(Node):
         self.max_angular_velocity = self.config.get('max_angular_velocity', 1.0)  # rad/s
         self.checkpoint_path = self.config.get('checkpoint_path', os.path.join(current_dir,'rlgames_runner/checkpoint/last_SocialNavHumanPoseMORL_ep_450_rew_446.22223.pth'))
         self.use_dummy_pid = self.config.get('use_dummy_pid', False)
+        self.step_count = 0
 
 
         self.model = None  # Placeholder for RL policy
@@ -83,7 +94,7 @@ class PlannerNode(Node):
 
         # Subscribers
         self.create_subscription(LaserScan, '/scan', self.scan_callback, qos_profile_sensor_data)
-        self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
+        #self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.create_subscription(Path, '/plan', self.path_callback, 10)
         self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
 
@@ -98,6 +109,11 @@ class PlannerNode(Node):
         # always publish zero when not planning
         #self.zero_timer = self.create_timer(0.1, self.publish_zero_velocity)
         
+        # Pose transform
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+
         # Actions
         self.global_plan_client = ActionClient(self, ComputePathToPose, '/compute_path_to_pose')
 
@@ -119,6 +135,23 @@ class PlannerNode(Node):
         self.last_angular_accel = 0.0
         self.dt = 0.1  # matches your 10 Hz control loop
 
+
+
+        # ODOM:
+        self.linear_velocity = 0.0
+        self.angular_velocity = 0.0        
+        # Odometry Subscriber for Velocity
+        # Standard odometry topic for velocity information
+        self.odom_subscription = self.create_subscription(
+            Odometry,
+            '/odom', # Common odometry topic (adjust if yours is different)
+            self.odom_callback,
+            10
+        )
+        # Timer to periodically get and print the combined data
+        self.timer2 = self.create_timer(0.1, self.get_robot_pose) # Check 10 times per second
+
+
         self.get_logger().info("PlannerNode initialized and ready.")
 
     # ------------------------------------------------------------------
@@ -133,16 +166,11 @@ class PlannerNode(Node):
 
         self.get_logger().debug(f"Received scan ({len(ranges)}→{len(self.lidar)})")
 
-    def odom_callback(self, msg: Odometry):
-        """Read odometry into (x, y, z, yaw)."""
-        self.pose = self.odom_to_pose(msg)  # TODO: pose here is base_link not robot center
-        self.get_logger().debug(f"Odom: x={self.pose['x']:.2f}, y={self.pose['y']:.2f}, yaw={math.degrees(self.pose['theta']):.1f}°, v={self.pose['v']:.2f}, omega={math.degrees(self.pose['omega']):.1f}")
 
     def path_callback(self, msg: Path):
         """Receive and simplify global path."""
-        #simplified = self.simplify_path(msg)
-        #self.waypoints = self.path_to_xyz_list(simplified)
-        self.waypoints = self.path_to_xyz_list(msg)
+        simplified = self.simplify_path(msg)
+        self.waypoints = self.path_to_xyz_list(simplified)
         self.is_planning = True
         self.current_waypoint = None
         self.get_logger().info(f"Path simplified to {len(self.waypoints)} waypoints.")
@@ -153,6 +181,8 @@ class PlannerNode(Node):
         self.goal_pose = np.array([pos.x, pos.y, pos.z])
         self.is_planning = True
         self.get_logger().info(f"Goal set: ({pos.x:.2f}, {pos.y:.2f})")
+        self.waypoints = []
+        self.current_waypoint = None
         self.call_nav2_planner(msg)
 
     def load_model(self):
@@ -187,7 +217,7 @@ class PlannerNode(Node):
         Kp_v = 0.8
         Ki_v = 0.0
         Kd_v = 0.1
-        Kp_w = 2.0
+        Kp_w = 1.0
         Ki_w = 0.0
         Kd_w = 0.2
         # --- Integral error state ---
@@ -198,6 +228,9 @@ class PlannerNode(Node):
             self.pid_prev_heading = heading_diff
         # --- Linear velocity PID ---
         error_v = goal_dist
+        # Enable reverse
+        if abs(heading_diff) > np.pi / 2:
+            error_v *= -1.0  
         self.pid_int_v += error_v * self.dt
         deriv_v = (error_v - self.pid_prev_dist) / self.dt
         v = Kp_v * error_v + Ki_v * self.pid_int_v + Kd_v * deriv_v
@@ -212,7 +245,6 @@ class PlannerNode(Node):
         v = np.clip(v, -self.max_velocity, self.max_velocity)
         omega = np.clip(omega, -self.max_angular_velocity, self.max_angular_velocity)
         
-        self.get_logger().info(f"PID Action ({v}, {omega})")  # TODO: set to debug
 
         return np.array([v, omega], dtype=np.float32)
 
@@ -232,33 +264,37 @@ class PlannerNode(Node):
         Compute (v, omega) based on relative goal and current waypoint.
         Updates waypoint as robot progresses.
         """
-        if not self.is_planning:
+        if not self.is_planning or (len(self.waypoints)==0 and self.current_waypoint is None):
             return 0.0, 0.0
 
-        if self.pose is None or self.lidar is None or len(self.waypoints) == 0:
-            self.get_logger().info("Observation not ready.")
+        if self.pose is None or self.lidar is None:
+            error_msg = "Pose" if self.pose is None else "Lidar"
+            self.get_logger().info("Observation not ready, {error_msg} not defined")
             return 0.0, 0.0
 
         # --- (1) Select current waypoint ---
         if self.current_waypoint is None:
             self.current_waypoint = np.array(self.waypoints[0])
+            self.waypoints.pop(0)
 
         # --- (2) Compute distance to current waypoint ---
         dx = self.current_waypoint[0] - self.pose['x']
         dy = self.current_waypoint[1] - self.pose['y']
         dist = math.hypot(dx, dy)
 
-        # --- (3) If close, move to next waypoint ---
-        if dist < self.waypoint_threshold and len(self.waypoints) > 1:
-            self.waypoints.pop(0)
-            self.current_waypoint = np.array(self.waypoints[0])
-            self.get_logger().info("Advancing to next waypoint.")
-
-        if dist < self.goal_threshold:
+        # check if goal is reached
+        if len(self.waypoints) == 0 and dist < self.goal_threshold:
             self.get_logger().info("Final goal reached.")
             self.is_planning = False
             self.goal_pose = None
             return 0.0, 0.0
+
+        # --- (3) If close, move to next waypoint ---
+        if dist < self.waypoint_threshold and len(self.waypoints) >= 1:
+            self.current_waypoint = np.array(self.waypoints[0])
+            self.waypoints.pop(0)
+            self.get_logger().info("Advancing to next waypoint.")
+
 
         # --- (4) Compute heading to goal ---
         goal_angle = math.atan2(dy, dx)
@@ -266,23 +302,38 @@ class PlannerNode(Node):
         heading_diff = goal_angle - yaw
 
         # Normalize to [-π, π]
-        heading_diff = (heading_diff + math.pi) % (2 * math.pi) - math.pi
+        #heading_diff = (heading_diff + math.pi) % (2 * math.pi) - math.pi
+        if heading_diff > np.pi:
+            heading_diff = heading_diff - 2 * np.pi
+        if heading_diff < -np.pi:
+            heading_diff = heading_diff + 2 * np.pi
+
 
         # --- (5) Placeholder velocity control (to be replaced by RL or PID) ---
         current_v = self.pose['v']
         current_omega = self.pose['omega']
         robot_state = np.array([current_v, current_omega, dist, heading_diff])
         observation = np.concatenate((robot_state, self.lidar))
-        self.get_logger().info(f"Robot state: {np.round(robot_state, decimals=2)}")  # TODO: set to debug
-        self.get_logger().info(f"Heading Diff: {np.round(np.degrees(heading_diff), decimals=2)}")  # TODO: set to debug
-        self.get_logger().info(f"Current waypoint: {np.round(self.current_waypoint, decimals=2)}")  # TODO: set to debug
-
+        
         if self.use_dummy_pid:
             v, omega = self.pid_plan(observation)
         else:
             v, omega = self.rl_plan(observation)
         # PID like
         v, omega = self.smooth_velocity(v, omega)
+
+        self.step_count += 1
+
+        if self.step_count % 20 == 0:
+            self.get_logger().info(f"====================")  # TODO: set to debug
+            self.get_logger().info(f"Robot state: {np.round(robot_state, decimals=2)}")  # TODO: set to debug
+            self.get_logger().info(f"Heading Diff: {np.round(np.degrees(heading_diff), decimals=2)}")  # TODO: set to debug
+            self.get_logger().info(f"Current waypoint: {np.round(self.current_waypoint, decimals=2)}")  # TODO: set to debug
+            self.get_logger().info(f"Goal: {np.round(self.goal_pose, decimals=2)}")  # TODO: set to debug
+            self.get_logger().info(f"Wapoints: {len(self.waypoints)}")  # TODO: set to debug
+            self.get_logger().info(f"Pose: {np.round(self.pose['x'], decimals=2)}, {np.round(self.pose['y'], decimals=2)}")  # TODO: set to debug
+            self.get_logger().info(f"PID Action ({np.round(v, decimals=2)}, {np.round(omega, decimals=2)})")  # TODO: set to debug
+
 
         return v, omega
 
@@ -416,37 +467,63 @@ class PlannerNode(Node):
         idx[-1] = n
         return np.array([np.min(ranges[idx[i]:idx[i + 1]]) for i in range(target_size)], dtype=np.float32)
 
-    @staticmethod
-    def odom_to_pose(odom_msg: Odometry):
-        """
-        Convert a nav_msgs/Odometry message to (x, y, z, theta, v, omega).
-        Args:
-            odom_msg (Odometry): Odometry message.
-        Returns:
-            tuple: (x, y, z, theta, v, omega)
-                - (x, y, z): position
-                - theta: yaw (radians)
-                - v: linear velocity (m/s)
-                - omega: angular velocity (rad/s)
-        """
-        # --- Position ---
-        pos = odom_msg.pose.pose.position
-        x, y, z = pos.x, pos.y, pos.z
 
-        # --- Orientation to yaw ---
-        ori = odom_msg.pose.pose.orientation
-        siny_cosp = 2.0 * (ori.w * ori.z + ori.x * ori.y)
-        cosy_cosp = 1.0 - 2.0 * (ori.y * ori.y + ori.z * ori.z)
-        theta = math.atan2(siny_cosp, cosy_cosp)
-        #quat = (ori.x, ori.y, ori.z, ori.w)
-        #_, _, theta = euler_from_quaternion(quat)
+    def odom_callback(self, msg: Odometry):
+        """
+        Callback to extract and store the linear (v) and angular (omega) velocities.
+        """
+        self.linear_velocity = msg.twist.twist.linear.x
+        self.angular_velocity = msg.twist.twist.angular.z
+
+    def get_robot_pose(self):
+        """
+        Looks up the transform from 'map' to 'base_link' and returns the 
+        pose and velocity data in the requested dictionary format.
+        """
+        target_frame = 'map'
+        source_frame = 'base_link'
         
-        # --- Velocities ---
-        twist = odom_msg.twist.twist
-        v = twist.linear.x
-        omega = twist.angular.z
+        try:
+            # Look up the latest transform (Pose data)
+            t: TransformStamped = self.tf_buffer.lookup_transform(
+                target_frame,
+                source_frame,
+                rclpy.time.Time()
+            )
+            
+            # 1. Extract Position (x, y, z)
+            x = t.transform.translation.x
+            y = t.transform.translation.y
+            z = t.transform.translation.z
+            
+            # 2. Convert Quaternion to Yaw (theta)
+            quaternion = (
+                t.transform.rotation.x,
+                t.transform.rotation.y,
+                t.transform.rotation.z,
+                t.transform.rotation.w
+            )
+            # euler_from_quaternion returns roll, pitch, yaw
+            #(roll, pitch, theta) = euler_from_quaternion(quaternion)
+            q = t.transform.rotation
+            siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+            cosy_cosp = 1.0 - 2.0 * (q.y*q.y + q.z*q.z)
+            theta = math.atan2(siny_cosp, cosy_cosp)
 
-        return {"x": x, "y": y, "z": z, "theta": theta, "v":v, "omega": omega}
+            
+            # 3. Get Velocities (v, omega)
+            v = self.linear_velocity
+            omega = self.angular_velocity
+            
+            # Return the data in the specified dictionary format
+            self.pose = {"x": x, "y": y, "z": z, "theta": theta, "v": v, "omega": omega}
+            
+        except tf2_ros.TransformException as ex:
+            # Handle error if transform is not available
+            self.get_logger().warn(f'Could not transform {source_frame} to {target_frame}: {ex}')
+            # Return default/zero values in case of failure
+            self.pose = {"x": 0.0, "y": 0.0, "z": 0.0, "theta": 0.0, "v": 0.0, "omega": 0.0}
+
 
     @staticmethod
     def path_to_xyz_list(path_msg: Path):
