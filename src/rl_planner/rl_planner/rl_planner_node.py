@@ -35,11 +35,14 @@ from nav_msgs.msg import Path, Odometry
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import PoseStamped, Twist
 from sensor_msgs.msg import LaserScan
+from rclpy.qos import qos_profile_sensor_data
 
 from rclpy.action import ActionClient
 from nav2_msgs.action import ComputePathToPose
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
+#from tf_transformations import euler_from_quaternion
+
 
 
 from rl_planner.rlgames_runner.rlgames_eval_policy import RLModel 
@@ -79,7 +82,7 @@ class PlannerNode(Node):
         self.goal_pose = None
 
         # Subscribers
-        self.create_subscription(LaserScan, '/scan', self.scan_callback, 10)
+        self.create_subscription(LaserScan, '/scan', self.scan_callback, qos_profile_sensor_data)
         self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
         self.create_subscription(Path, '/plan', self.path_callback, 10)
         self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10)
@@ -93,7 +96,7 @@ class PlannerNode(Node):
         planner_hz = 10
         self.timer = self.create_timer(1/planner_hz, self.control_loop)
         # always publish zero when not planning
-        self.zero_timer = self.create_timer(0.1, self.publish_zero_velocity)
+        #self.zero_timer = self.create_timer(0.1, self.publish_zero_velocity)
         
         # Actions
         self.global_plan_client = ActionClient(self, ComputePathToPose, '/compute_path_to_pose')
@@ -137,9 +140,11 @@ class PlannerNode(Node):
 
     def path_callback(self, msg: Path):
         """Receive and simplify global path."""
-        simplified = self.simplify_path(msg)
-        self.waypoints = self.path_to_xyz_list(simplified)
+        #simplified = self.simplify_path(msg)
+        #self.waypoints = self.path_to_xyz_list(simplified)
+        self.waypoints = self.path_to_xyz_list(msg)
         self.is_planning = True
+        self.current_waypoint = None
         self.get_logger().info(f"Path simplified to {len(self.waypoints)} waypoints.")
 
     def goal_callback(self, msg: PoseStamped):
@@ -206,6 +211,8 @@ class PlannerNode(Node):
         # --- Clip to physical limits ---
         v = np.clip(v, -self.max_velocity, self.max_velocity)
         omega = np.clip(omega, -self.max_angular_velocity, self.max_angular_velocity)
+        
+        self.get_logger().info(f"PID Action ({v}, {omega})")  # TODO: set to debug
 
         return np.array([v, omega], dtype=np.float32)
 
@@ -229,6 +236,7 @@ class PlannerNode(Node):
             return 0.0, 0.0
 
         if self.pose is None or self.lidar is None or len(self.waypoints) == 0:
+            self.get_logger().info("Observation not ready.")
             return 0.0, 0.0
 
         # --- (1) Select current waypoint ---
@@ -265,6 +273,9 @@ class PlannerNode(Node):
         current_omega = self.pose['omega']
         robot_state = np.array([current_v, current_omega, dist, heading_diff])
         observation = np.concatenate((robot_state, self.lidar))
+        self.get_logger().info(f"Robot state: {np.round(robot_state, decimals=2)}")  # TODO: set to debug
+        self.get_logger().info(f"Heading Diff: {np.round(np.degrees(heading_diff), decimals=2)}")  # TODO: set to debug
+        self.get_logger().info(f"Current waypoint: {np.round(self.current_waypoint, decimals=2)}")  # TODO: set to debug
 
         if self.use_dummy_pid:
             v, omega = self.pid_plan(observation)
@@ -427,7 +438,9 @@ class PlannerNode(Node):
         siny_cosp = 2.0 * (ori.w * ori.z + ori.x * ori.y)
         cosy_cosp = 1.0 - 2.0 * (ori.y * ori.y + ori.z * ori.z)
         theta = math.atan2(siny_cosp, cosy_cosp)
-
+        #quat = (ori.x, ori.y, ori.z, ori.w)
+        #_, _, theta = euler_from_quaternion(quat)
+        
         # --- Velocities ---
         twist = odom_msg.twist.twist
         v = twist.linear.x
